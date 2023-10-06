@@ -11,3 +11,4 @@ vscode:
     - vscjava.vscode-java-debug
     - vscjava.vscode-java-test
     - SonarSource.sonarlint-vscode
+    - vscjava.vscode-java-pack

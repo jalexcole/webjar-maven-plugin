@@ -4,48 +4,21 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.cole</groupId>
-	<artifactId>webjar-maven-plugin</artifactId>
+	<artifactId>webjar-maven-plugin-parent</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>demo</name>
-	<packaging>maven-plugin</packaging>
 	<description>Demo project for Spring Boot</description>
+    <packaging>pom</packaging>
+
 	<properties>
 		<java.version>11</java.version>
 		<maven.compiler.source>11</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+		<maven.compiler.target>11</maven.compiler.target>
 	</properties>
-	<dependencies>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-plugin-api</artifactId>
-			<version>3.6.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven.plugin-tools</groupId>
-			<artifactId>maven-plugin-annotations</artifactId>
-			<version>3.6.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-project</artifactId>
-			<version>2.2.1</version>
-		</dependency>
-	</dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.6.0</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.8.2</version>
-            </plugin>
-		</plugins>
-	</build>
+    <modules>
+        <module>webjar-maven-plugin</module>
+        <module>webjar-maven-plugin-test</module>
+    </modules>
 
 </project>
