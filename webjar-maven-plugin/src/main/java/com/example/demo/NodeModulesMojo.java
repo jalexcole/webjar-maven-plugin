@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +18,6 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
@@ -29,9 +29,12 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Mojo(name = "copyNodeModules", defaultPhase = LifecyclePhase.INITIALIZE, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class NodeModulesMojo extends AbstractMojo {
-
+    private static final ObjectMapper objectectMapper = new ObjectMapper();
     private static final Logger logger = Logger.getLogger(NodeModulesMojo.class.getName());
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -85,10 +88,20 @@ public class NodeModulesMojo extends AbstractMojo {
     }
 
     public void processArtifact(Artifact artifact) {
-
-        Path artifactPath = artifact.getFile().toPath();
+        makePackageFolder(artifact);
         try {
-            Path tempPath = File.createTempFile("Node-modules-temp", artifact.toString()).toPath();
+            logger.info(objectectMapper.writeValueAsString(artifact));
+        } catch (JsonProcessingException e) {
+            logger.log(Level.WARNING, e.getMessage(), e.getCause());
+        }
+        Path artifactPath = artifact.getFile().toPath();
+        logger.info("Input path: " + artifactPath.toString());
+        try {
+
+            Path tempPath = Files.createTempDirectory(artifact.getArtifactId());
+            logger.info("Temp file path: " + tempPath.toString());
+            // Path tempPath = File.createTempFile("Node-modules-temp",
+            // artifact.toString()).toPath();
             unzipFolder(artifactPath, tempPath);
 
             List<String> expectedPath = new LinkedList<>();
@@ -97,23 +110,38 @@ public class NodeModulesMojo extends AbstractMojo {
             expectedPath.add("resources");
             expectedPath.add("webjars");
             expectedPath.add(artifact.getArtifactId());
-            expectedPath.add(artifact.getVersion());
+            expectedPath.add(artifact.getBaseVersion());
 
             List<String> directories = new ArrayList<>();
             Arrays.asList(nodeModulesPath.split("/")).forEach(directories::add);
             directories.add(NODE_MODULES_DIR);
             directories.add(artifact.getArtifactId());
-            new File(String.join("/", directories)).mkdir();
+            // new File(String.join("/", directories)).mkdir();
+
+            project.getFile();
+            Path packagePath = Paths.get(project.getBasedir().getPath(), directories.toArray(new String[directories.size()]));
             if (tempPath.toFile().list().length != 0) {
-                FileUtils.copyDirectory(new File(String.join("/", expectedPath)),
-                        new File(String.join("/", directories)));
+                Files.copy(new File(String.join("/", expectedPath)).toPath(),
+                       packagePath, StandardCopyOption.COPY_ATTRIBUTES);
             }
 
-            tempPath.toFile().delete();
         } catch (IOException e) {
             logger.log(Level.WARNING, e.getMessage(), e.getCause());
         }
 
+    }
+
+
+    public void makePackageFolder(Artifact artifact) {
+        String baseDirPath = project.getBasedir().getPath();
+        List<String> myPaths = new ArrayList<>();
+        // myPaths.add(baseDirPath);
+        Arrays.asList(nodeModulesPath.split("/")).forEach(myPaths::add);
+        myPaths.add(NODE_MODULES_DIR);
+        myPaths.add(artifact.getArtifactId());
+        Path path = Paths.get(baseDirPath, myPaths.toArray(new String[myPaths.size()]));
+        logger.info("Making path " + path.toString());
+        logger.info("path made: " + path.toFile().mkdirs());
     }
 
     public void makeNodeModules() throws MojoFailureException {
@@ -178,16 +206,6 @@ public class NodeModulesMojo extends AbstractMojo {
                     // copy files, nio
                     Files.copy(zis, newPath, StandardCopyOption.REPLACE_EXISTING);
 
-                    // copy files, classic
-                    /*
-                     * try (FileOutputStream fos = new FileOutputStream(newPath.toFile())) {
-                     * byte[] buffer = new byte[1024];
-                     * int len;
-                     * while ((len = zis.read(buffer)) > 0) {
-                     * fos.write(buffer, 0, len);
-                     * }
-                     * }
-                     */
                 }
 
                 zipEntry = zis.getNextEntry();
